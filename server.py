@@ -25,16 +25,6 @@ global encryptkey
 
 post_log_path = 'post.log'
 
-
-def post_log(data):
-    with open(post_log_path, 'a') as outfile:
-        outfile.write('[%s]\n' % time.strftime('%c'))
-        outfile.write(data)
-        outfile.write('\n\n[hex encode]\n')
-        outfile.write(data.encode('hex'))
-        outfile.write('\n\n\n')
-
-
 # type 1: IV, type 2: tag, type 0: ciphertext
 tlv = TLV.TLV(['0000', '0100', '0200'])
 
@@ -67,14 +57,19 @@ def decrypt(key, iv, ciphertext, tag):
 
 
 def test_encryt():
-    key = 'zhaochao' * 2
+    key = 'zhaochao' * 4
     # Generate a random 96-bit IV.
-    iv = os.urandom(12)
+    iv = os.urandom(36)
     iv, ciphertext, tag = encrypt(
         key,
         iv,
         b"a secret message!",
     )
+    print('IV: %s (len: %d)\ntag: %s (len: %d)\n'
+          'cipher text: %s (len: %d)\n' %
+          (iv.encode('hex'), len(iv),
+           tag.encode('hex'), len(tag),
+           ciphertext.encode('hex'), len(ciphertext)))
     print(decrypt(
         key,
         iv,
@@ -87,6 +82,14 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
 
     def __print_info__(self):
         print("headers: %s" % self.headers)
+
+    def __post_log__(self, data, path):
+        with open(post_log_path, 'a') as outfile:
+            outfile.write('[%s] %s\n' % (time.strftime('%c'), path))
+            outfile.write(data)
+            outfile.write('\n\n[hex encode]\n')
+            outfile.write(data.encode('hex'))
+            outfile.write('\n\n\n')
 
     def __get_root__(self):
         self.send_response(200)
@@ -139,11 +142,15 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('data in hex: %s' % hexdata)
         tlvdata = tlv.parse(hexdata)
         print('tlv parsed: %s' % str(tlvdata))
-        iv = tlvdata['0000']
-        tag = tlvdata['0100']
-        ciphertext = tlvdata['0200']
-        print('IV: %s\ntag: %s\ncipher text: %s\n' % (iv, tag, ciphertext))
-        return decrypt(encryptkey, iv.decode('hex'), ciphertext.decode('hex'), tag.decode('hex'))
+        iv = tlvdata['0000'].decode('hex')
+        tag = tlvdata['0100'].decode('hex')
+        ciphertext = tlvdata['0200'].decode('hex')
+        print('IV: %s (len: %d)\ntag: %s (len: %d)\n'
+              'cipher text: %s (len: %d)\n' %
+              (iv.encode('hex'), len(iv),
+               tag.encode('hex'), len(tag),
+               ciphertext.encode('hex'), len(ciphertext)))
+        return decrypt(encryptkey, iv, ciphertext, tag)
 
     def __post_locale__(self, data):
         print('android post locale:\n%s' % data)
@@ -170,7 +177,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         self.__print_info__()
         content_length = int(self.headers.getheader('Content-Length', 0))
         data = self.rfile.read(content_length)
-        post_log(data)
+        self.__post_log__(data, self.path)
         if self.path.startswith('/pubkey'):
             self.__post_pubkey__(data)
         elif self.path.startswith('/locale'):
@@ -238,6 +245,7 @@ def get_keys(privkey_filename, pubkey_filename):
 if __name__ == '__main__':
     privkey_filename = 'priv.pem'
     pubkey_filename = 'pub.pem'
+    test_encryt()
     get_keys(privkey_filename, pubkey_filename)
     print('private key:\n%s\npublic key:\n%s' % (privpem, pubpem))
     start_server()
