@@ -30,19 +30,13 @@ def post_log(data):
     with open(post_log_path, 'a') as outfile:
         outfile.write('[%s]\n' % time.strftime('%c'))
         outfile.write(data)
+        outfile.write('\n\n[hex encode]\n')
+        outfile.write(data.encode('hex'))
         outfile.write('\n\n\n')
 
 
-def hexstring(data):
-    return binascii.hexlify(bytearray(data)).decode('ascii').upper()
-
-
 # type 1: IV, type 2: tag, type 0: ciphertext
-tlv = TLV.TLV(['0', '1', '2'])
-
-# tlv = TLV(['84', 'A5']) # provide the possible tag values
-# tlv.parse('840E315041592E5359532E4444463031A5088801025F2D02656E')
-# >>> {'84': '315041592E5359532E4444463031', 'A5': '8801025F2D02656E'}
+tlv = TLV.TLV(['00', '01', '02'])
 
 
 def encrypt(key, iv, plaintext):
@@ -72,22 +66,21 @@ def decrypt(key, iv, ciphertext, tag):
     return decryptor.update(ciphertext) + decryptor.finalize()
 
 
-key = 'zhaochao' * 2
-# Generate a random 96-bit IV.
-iv = os.urandom(12)
-
-iv, ciphertext, tag = encrypt(
-    key,
-    iv,
-    b"a secret message!",
-)
-
-print(decrypt(
-    key,
-    iv,
-    ciphertext,
-    tag
-))
+def test_encryt():
+    key = 'zhaochao' * 2
+    # Generate a random 96-bit IV.
+    iv = os.urandom(12)
+    iv, ciphertext, tag = encrypt(
+        key,
+        iv,
+        b"a secret message!",
+    )
+    print(decrypt(
+        key,
+        iv,
+        ciphertext,
+        tag
+    ))
 
 
 class DashRequestHandler(BaseHTTPRequestHandler, object):
@@ -131,7 +124,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('android post pubkey:\n%s' % peerpubpem)
         peerpubkey = load_pem_public_key(peerpubpem, backend=default_backend())
         sharedkey = privkey.exchange(ec.ECDH(), peerpubkey)
-        print('shared key: %s' % hexstring(sharedkey))
+        print('shared key: %s' % sharedkey.encode('hex'))
         encryptkey = HKDF(
             algorithm=hashes.SHA256(),
             length=32,
@@ -139,16 +132,29 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
             info=b'encryption key for network',
             backend=default_backend()
         ).derive(sharedkey)
-        print('encryption key: %s' % hexstring(encryptkey))
+        print('encryption key: %s' % encryptkey.encode('hex'))
+
+    def __decrypt_data__(self, data):
+        hexdata = data.encode('hex').upper()
+        print('data in hex: %s' % hexdata)
+        tlvdata = tlv.parse(hexdata)
+        print('tlv parsed: %s' % str(tlvdata))
+        iv = tlvdata['00']
+        tag = tlvdata['01']
+        ciphertext = tlvdata['02']
+        print('IV: %s\ntag: %s\ncipher text: %s\n' % (iv, tag, ciphertext))
+        return decrypt(encryptkey, iv.decode('hex'), ciphertext.decode('hex'), tag.decode('hex'))
 
     def __post_locale__(self, data):
         print('android post locale:\n%s' % data)
 
     def __post_stoken__(self, data):
-        pass
+        stoken = self.__decrypt_data__(data)
+        print('android post stoken after decryption: %s' % stoken)
 
     def __post_network__(self, data):
-        pass
+        network = self.__decrypt_data__(data)
+        print('android post network credentials after decryption: %s' % network)
 
     def do_GET(self):
         self.__print_info__()
