@@ -59,7 +59,7 @@ def decrypt(key, iv, ciphertext, tag):
 
 def test_encryt():
     # 128, 192, 256 bit encryption key
-    key = 'blahblah' * 3 # 2, 3 or 4
+    key = 'blahblah' * 3  # 2, 3 or 4
     # Generate a random 128-bit IV.
     iv = os.urandom(16)
     iv, ciphertext, tag = encrypt(
