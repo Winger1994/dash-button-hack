@@ -23,6 +23,7 @@ global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
 global encryptkey
 
+encryptsalt = None
 post_log_path = 'post.log'
 
 # type 1: IV, type 2: tag, type 0: ciphertext
@@ -57,9 +58,10 @@ def decrypt(key, iv, ciphertext, tag):
 
 
 def test_encryt():
-    key = 'zhaochao' * 4
-    # Generate a random 96-bit IV.
-    iv = os.urandom(36)
+    # 128, 192, 256 bit encryption key
+    key = 'zhaochao' * 3
+    # Generate a random 128-bit IV.
+    iv = os.urandom(16)
     iv, ciphertext, tag = encrypt(
         key,
         iv,
@@ -130,8 +132,8 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('shared key: %s' % sharedkey.encode('hex'))
         encryptkey = HKDF(
             algorithm=hashes.SHA256(),
-            length=32,
-            salt=None,
+            length=16,
+            salt=encryptsalt,
             info=b'encryption key for network',
             backend=default_backend()
         ).derive(sharedkey)
