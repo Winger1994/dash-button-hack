@@ -25,10 +25,10 @@ post_log_path = 'post.log'
 
 
 def post_log(data):
-    with open(post_log_path, 'w') as outfile:
-        outfile.write('[%s]' % time.strftime('%c'))
+    with open(post_log_path, 'a') as outfile:
+        outfile.write('[%s]\n' % time.strftime('%c'))
         outfile.write(data)
-        outfile.write('\n')
+        outfile.write('\n\n\n')
 
 
 # type 1: IV, type 2: tag, type 0: ciphertext
@@ -95,13 +95,15 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('Content Type is: %s' % content_type)
         if content_type.startswith('application/json'):
             inpath = 'index.json'
-            self.send_header('Content-Type', 'application/json')
         else:
             inpath = 'index.html'
-            self.send_header('Content-Type', 'text/html')
         with open(inpath, 'r') as infile:
             data = infile.read()
-        self.send_header('Content-Length', len(data))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers',
+                         'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since')
+        self.send_header('Content-Type', 'text/html')
         self.end_headers()
         self.wfile.write(data)
 
@@ -114,16 +116,12 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         self.end_headers()
         self.wfile.write(data)
 
-    def __post_pubkey__(self):
+    def __post_pubkey__(self, data):
         global peerpubkey, peerpubpem
-        data = self.rfile.read()
-        post_log(data)
         dictdata = json.loads(data)
-        peerpubpem = dictdata['publicKey']
+        peerpubpem = dictdata['publicKey'].encode()
         print('Peer Public Key:\n%s' % peerpubpem)
         peerpubkey = load_pem_public_key(peerpubpem, backend=default_backend())
-        self.send_response(200)
-        self.end_headers()
 
     def do_GET(self):
         self.__print_info__()
@@ -135,19 +133,17 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         else:
             self.send_response(404)
 
-    def do_HEAD(self):
-        self.__print_info__()
-        self.send_response(200)
-
     def do_POST(self):
         self.__print_info__()
+        content_length = int(self.headers.getheader('Content-Length', 0))
+        data = self.rfile.read(content_length)
         if self.path.startswith('/pubkey'):
-            self.__post_pubkey__()
-        else:
-            data = self.rfile.read()
-            post_log(data)
-            self.send_response(200)
-            self.end_headers()
+            self.__post_pubkey__(data)
+        post_log(data)
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.send_header('Content-Length', 0)
+        self.end_headers()
 
 
 def start_server():
