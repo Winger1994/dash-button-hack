@@ -36,7 +36,7 @@ def post_log(data):
 
 
 # type 1: IV, type 2: tag, type 0: ciphertext
-tlv = TLV.TLV(['00', '01', '02'])
+tlv = TLV.TLV(['0000', '0100', '0200'])
 
 
 def encrypt(key, iv, plaintext):
@@ -170,6 +170,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         self.__print_info__()
         content_length = int(self.headers.getheader('Content-Length', 0))
         data = self.rfile.read(content_length)
+        post_log(data)
         if self.path.startswith('/pubkey'):
             self.__post_pubkey__(data)
         elif self.path.startswith('/locale'):
@@ -178,7 +179,6 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
             self.__post_stoken__(data)
         elif self.path.startswith('/network'):
             self.__post_network__(data)
-        post_log(data)
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
         self.send_header('Content-Length', 0)
