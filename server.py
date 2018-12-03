@@ -209,6 +209,8 @@ def read_keys(privkey_filename, pubkey_filename=None):
         pubkey = privkey.public_key()
         pubpem = pubkey.public_bytes(
             Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+        with open(pubkey_filename, 'w') as outfile:
+            outfile.write(pubpem)
     else:
         with open(pubkey_filename, 'r') as infile:
             pubpem = infile.read()
