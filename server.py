@@ -21,7 +21,7 @@ from cryptography.hazmat.primitives.ciphers import (
 
 global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
-global encryptkey
+global encryptkey, encryptsalt
 
 encryptsalt = None
 post_log_path = 'post.log'
@@ -59,25 +59,17 @@ def decrypt(key, iv, ciphertext, tag):
 
 def test_encryt():
     # 128, 192, 256 bit encryption key
-    key = 'zhaochao' * 3
+    key = 'blahblah' * 3 # 2, 3 or 4
     # Generate a random 128-bit IV.
     iv = os.urandom(16)
     iv, ciphertext, tag = encrypt(
-        key,
-        iv,
-        b"a secret message! what a beautiful day",
-    )
+        key, iv, b"a secret message! what a beautiful day")
     print('IV: %s (len: %d)\ntag: %s (len: %d)\n'
           'cipher text: %s (len: %d)\n' %
           (iv.encode('hex'), len(iv),
            tag.encode('hex'), len(tag),
            ciphertext.encode('hex'), len(ciphertext)))
-    print(decrypt(
-        key,
-        iv,
-        ciphertext,
-        tag
-    ))
+    print(decrypt(key, iv, ciphertext, tag))
 
 
 class DashRequestHandler(BaseHTTPRequestHandler, object):
@@ -163,7 +155,8 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
 
     def __post_network__(self, data):
         network = self.__decrypt_data__(data)
-        print('android post network credentials after decryption: %s' % network)
+        print('android post network credentials after decryption: %s'
+              % network)
 
     def do_GET(self):
         self.__print_info__()
