@@ -6,9 +6,9 @@ import json
 from pytlv import TLV
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import (
     Encoding, PrivateFormat, PublicFormat, NoEncryption,
     load_pem_private_key, load_pem_public_key
@@ -20,6 +20,7 @@ from cryptography.hazmat.primitives.ciphers import (
 
 global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
+global encryptkey
 
 post_log_path = 'post.log'
 
@@ -102,7 +103,9 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers',
-                         'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since')
+                         'Authorization,Content-Type,Accept,Origin,User-Agent,'
+                         'DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,'
+                         'X-Requested-With,If-Modified-Since')
         self.send_header('Content-Type', 'text/html')
         self.end_headers()
         self.wfile.write(data)
@@ -117,11 +120,30 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         self.wfile.write(data)
 
     def __post_pubkey__(self, data):
-        global peerpubkey, peerpubpem
+        global peerpubkey, peerpubpem, encryptkey
         dictdata = json.loads(data)
         peerpubpem = dictdata['publicKey'].encode()
-        print('Peer Public Key:\n%s' % peerpubpem)
+        print('android post pubkey:\n%s' % peerpubpem)
         peerpubkey = load_pem_public_key(peerpubpem, backend=default_backend())
+        sharedkey = privkey.exchange(ec.ECDH(), peerpubkey)
+        print('shared key: %s' % sharedkey)
+        encryptkey = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=None,
+            info=b'encryption key for network',
+            backend=default_backend()
+        ).derive(sharedkey)
+        print('encryption key: %s' % encryptkey)
+
+    def __post_locale__(self, data):
+        print('android post locale:\n%s' % data)
+
+    def __post_stoken__(self, data):
+        pass
+
+    def __post_network__(self, data):
+        pass
 
     def do_GET(self):
         self.__print_info__()
@@ -139,6 +161,12 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         data = self.rfile.read(content_length)
         if self.path.startswith('/pubkey'):
             self.__post_pubkey__(data)
+        elif self.path.startswith('/locale'):
+            self.__post_locale__(data)
+        elif self.path.startswith('/stoken'):
+            self.__post_stoken__(data)
+        elif self.path.startswith('/network'):
+            self.__post_network__(data)
         post_log(data)
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
