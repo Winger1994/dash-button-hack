@@ -149,7 +149,8 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
 
 
 def start_server():
-    print("Starting Dash Button Server...")
+    print("Start Dash Button Server...")
+    DashRequestHandler.protocol_version = 'HTTP/1.0'
     httpd = HTTPServer(('0.0.0.0', 80), DashRequestHandler)
     httpd.serve_forever()
 
