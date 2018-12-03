@@ -24,7 +24,8 @@ global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
 global encryptkey, encryptsalt
 
-encryptsalt = urllib.unquote('8%F7%3Dc3%F2')
+encryptsalt = b'G030QC0381658814'  # device id
+# encryptsalt = urllib.unquote('8%F7%3Dc3%F2')  # mac id
 print('encryption salt (hex): %s' % encryptsalt.encode('hex'))
 post_log_path = 'post.log'
 
