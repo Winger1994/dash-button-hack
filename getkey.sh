@@ -2,8 +2,8 @@
 
 set -x
 
-openssl ecparam -name prime256v1 -genkey -noout -out priv.pem
-openssl ec -in priv.pem -pubout -out pub.pem
+# openssl ecparam -name prime256v1 -genkey -noout -out priv.pem
+# openssl ec -in priv.pem -pubout -out pub.pem
 
 address=localhost
 publicKey=$(cat pub.pem | awk '{printf "%s\\n", $0}')

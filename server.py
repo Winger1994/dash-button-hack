@@ -3,6 +3,7 @@
 import os
 import time
 import json
+import binascii
 from pytlv import TLV
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
@@ -30,6 +31,10 @@ def post_log(data):
         outfile.write('[%s]\n' % time.strftime('%c'))
         outfile.write(data)
         outfile.write('\n\n\n')
+
+
+def hexstring(data):
+    return binascii.hexlify(bytearray(data)).decode('ascii').upper()
 
 
 # type 1: IV, type 2: tag, type 0: ciphertext
@@ -126,7 +131,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('android post pubkey:\n%s' % peerpubpem)
         peerpubkey = load_pem_public_key(peerpubpem, backend=default_backend())
         sharedkey = privkey.exchange(ec.ECDH(), peerpubkey)
-        print('shared key: %s' % sharedkey)
+        print('shared key: %s' % hexstring(sharedkey))
         encryptkey = HKDF(
             algorithm=hashes.SHA256(),
             length=32,
@@ -134,7 +139,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
             info=b'encryption key for network',
             backend=default_backend()
         ).derive(sharedkey)
-        print('encryption key: %s' % encryptkey)
+        print('encryption key: %s' % hexstring(encryptkey))
 
     def __post_locale__(self, data):
         print('android post locale:\n%s' % data)
