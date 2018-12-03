@@ -63,7 +63,7 @@ def test_encryt():
     iv, ciphertext, tag = encrypt(
         key,
         iv,
-        b"a secret message!",
+        b"a secret message! what a beautiful day",
     )
     print('IV: %s (len: %d)\ntag: %s (len: %d)\n'
           'cipher text: %s (len: %d)\n' %
@@ -142,9 +142,9 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('data in hex: %s' % hexdata)
         tlvdata = tlv.parse(hexdata)
         print('tlv parsed: %s' % str(tlvdata))
-        iv = tlvdata['0000'].decode('hex')
-        tag = tlvdata['0100'].decode('hex')
-        ciphertext = tlvdata['0200'].decode('hex')
+        iv = tlvdata['0100'].decode('hex')
+        tag = tlvdata['0200'].decode('hex')
+        ciphertext = tlvdata['0000'].decode('hex')
         print('IV: %s (len: %d)\ntag: %s (len: %d)\n'
               'cipher text: %s (len: %d)\n' %
               (iv.encode('hex'), len(iv),
