@@ -3,7 +3,7 @@
 import os
 import time
 import json
-import binascii
+import traceback
 from pytlv import TLV
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
@@ -147,19 +147,29 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
               (iv.encode('hex'), len(iv),
                tag.encode('hex'), len(tag),
                ciphertext.encode('hex'), len(ciphertext)))
-        return decrypt(encryptkey, iv, ciphertext, tag)
+        try:
+            return decrypt(encryptkey, iv, ciphertext, tag)
+        except:
+            traceback.print_exc(file=os.sys.stderr)
+            return None
 
     def __post_locale__(self, data):
         print('android post locale:\n%s' % data)
 
     def __post_stoken__(self, data):
         stoken = self.__decrypt_data__(data)
-        print('android post stoken after decryption: %s' % stoken)
+        if stoken is None:
+            print('decryption failed')
+        else:
+            print('android post stoken after decryption: %s' % stoken)
 
     def __post_network__(self, data):
         network = self.__decrypt_data__(data)
-        print('android post network credentials after decryption: %s'
-              % network)
+        if network is None:
+            print('decryption failed')
+        else:
+            print('android post network credentials after decryption: %s'
+                  % network)
 
     def do_GET(self):
         self.__log__('GET', self.path)
