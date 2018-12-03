@@ -91,7 +91,9 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
 
     def __get_root__(self):
         self.send_response(200)
-        if self.headers.getheader('Content-Type') is 'application/json':
+        content_type = self.headers.getheader('Content-Type')
+        print('Content Type is: %s' % content_type)
+        if content_type.startswith('application/json'):
             inpath = 'index.json'
             self.send_header('Content-Type', 'application/json')
         else:
