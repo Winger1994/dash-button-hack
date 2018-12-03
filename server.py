@@ -123,6 +123,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('Peer Public Key:\n%s' % peerpubpem)
         peerpubkey = load_pem_public_key(peerpubpem, backend=default_backend())
         self.send_response(200)
+        self.end_headers()
 
     def do_GET(self):
         self.__print_info__()
@@ -140,12 +141,13 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
 
     def do_POST(self):
         self.__print_info__()
-        if self.path.startswith('pubkey'):
+        if self.path.startswith('/pubkey'):
             self.__post_pubkey__()
         else:
             data = self.rfile.read()
             post_log(data)
             self.send_response(200)
+            self.end_headers()
 
 
 def start_server():
