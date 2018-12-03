@@ -139,9 +139,9 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('data in hex: %s' % hexdata)
         tlvdata = tlv.parse(hexdata)
         print('tlv parsed: %s' % str(tlvdata))
-        iv = tlvdata['00']
-        tag = tlvdata['01']
-        ciphertext = tlvdata['02']
+        iv = tlvdata['0000']
+        tag = tlvdata['0100']
+        ciphertext = tlvdata['0200']
         print('IV: %s\ntag: %s\ncipher text: %s\n' % (iv, tag, ciphertext))
         return decrypt(encryptkey, iv.decode('hex'), ciphertext.decode('hex'), tag.decode('hex'))
 
