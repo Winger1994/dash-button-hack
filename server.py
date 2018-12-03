@@ -74,21 +74,23 @@ def test_encryt():
 
 class DashRequestHandler(BaseHTTPRequestHandler, object):
 
-    def __print_info__(self):
-        print("headers: %s" % self.headers)
-
-    def __post_log__(self, data, path):
+    def __log__(self, method, path, data=None):
         with open(post_log_path, 'a') as outfile:
-            outfile.write('[%s] %s\n' % (time.strftime('%c'), path))
-            outfile.write(data)
-            outfile.write('\n\n[hex encode]\n')
-            outfile.write(data.encode('hex'))
-            outfile.write('\n\n\n')
+            outfile.write('[%s] %s %s\n\n' %
+                          (time.strftime('%c'), method, path))
+            print('[%s] %s %s\n' % (time.strftime('%c'), method, path))
+            outfile.write('[headers]\n%s\n\n' % self.headers)
+            print('[headers]\n%s\n' % self.headers)
+            if data is not None:
+                if (all(ord(char) < 128 for char in data)):
+                    outfile.write('[data]\n%s\n\n' % data)
+                    print('[data]\n%s\n' % data)
+                else:
+                    outfile.write('[hex encode]\n%s\n\n' % data.encode('hex'))
+                    print('[hex encode]\n%s\n' % data.encode('hex'))
 
     def __get_root__(self):
         self.send_response(200)
-        content_type = self.headers.getheader('Content-Type')
-        print('Content Type is: %s' % content_type)
         if content_type.startswith('application/json'):
             inpath = 'index.json'
         else:
@@ -159,8 +161,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
               % network)
 
     def do_GET(self):
-        self.__print_info__()
-        print self.path
+        self.__log__('GET', self.path)
         if self.path is '/':
             self.__get_root__()
         elif self.path.startswith('/pubkey'):
@@ -169,10 +170,9 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
             self.send_response(404)
 
     def do_POST(self):
-        self.__print_info__()
         content_length = int(self.headers.getheader('Content-Length', 0))
         data = self.rfile.read(content_length)
-        self.__post_log__(data, self.path)
+        self.__log__('POST', self.path, data=data)
         if self.path.startswith('/pubkey'):
             self.__post_pubkey__(data)
         elif self.path.startswith('/locale'):
