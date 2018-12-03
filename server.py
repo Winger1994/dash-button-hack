@@ -4,6 +4,7 @@ import os
 import time
 import json
 import traceback
+import urllib
 from pytlv import TLV
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
@@ -23,7 +24,8 @@ global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
 global encryptkey, encryptsalt
 
-encryptsalt = None
+encryptsalt = urllib.unquote('8%F7%3Dc3%F2')
+print('encryption salt (hex): %s' % encryptsalt.encode('hex'))
 post_log_path = 'post.log'
 
 # type 1: IV, type 2: tag, type 0: ciphertext
