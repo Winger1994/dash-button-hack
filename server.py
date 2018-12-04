@@ -22,12 +22,8 @@ from cryptography.hazmat.primitives.ciphers import (
 
 global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
-global encryptkey, encryptsalt
+global encryptkey
 
-encryptsalt = b'Amazon ConfigureMe'
-# encryptsalt = b'G030QC0381658814'  # device id
-# encryptsalt = urllib.unquote('8%F7%3Dc3%F2')  # mac id
-# print('encryption salt (hex): %s' % encryptsalt.encode('hex'))
 post_log_path = 'post.log'
 
 # type 1: IV, type 2: tag, type 0: ciphertext
@@ -104,7 +100,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         else:
             inpath = 'index.html'
         with open(inpath, 'r') as infile:
-            data = infile.read()
+            data = urllib.unquote(infile.read())
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers',
@@ -135,7 +131,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         encryptkey = HKDF(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=encryptsalt,
+            salt=None,
             info=b'encryption key for network',
             backend=default_backend()
         ).derive(sharedkey)
