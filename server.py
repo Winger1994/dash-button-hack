@@ -22,11 +22,12 @@ from cryptography.hazmat.primitives.ciphers import (
 
 global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
-global encryptkey, encryptsalt
+global encryptkey, encryptsalt, associatedata
 
-encryptsalt = b'G030QC0381658814'  # device id
+encryptsalt = None
+# encryptsalt = b'G030QC0381658814'  # device id
 # encryptsalt = urllib.unquote('8%F7%3Dc3%F2')  # mac id
-print('encryption salt (hex): %s' % encryptsalt.encode('hex'))
+# print('encryption salt (hex): %s' % encryptsalt.encode('hex'))
 post_log_path = 'post.log'
 
 # type 1: IV, type 2: tag, type 0: ciphertext
@@ -130,7 +131,7 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
         print('shared key: %s' % sharedkey.encode('hex'))
         encryptkey = HKDF(
             algorithm=hashes.SHA256(),
-            length=16,
+            length=32,
             salt=encryptsalt,
             info=b'encryption key for network',
             backend=default_backend()
@@ -203,7 +204,6 @@ class DashRequestHandler(BaseHTTPRequestHandler, object):
 
 def start_server():
     print("Start Dash Button Server...")
-    DashRequestHandler.protocol_version = 'HTTP/1.0'
     httpd = HTTPServer(('0.0.0.0', 80), DashRequestHandler)
     httpd.serve_forever()
 
