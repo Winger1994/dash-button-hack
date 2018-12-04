@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives.ciphers import (
 
 global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
-global encryptkey, encryptsalt, associatedata
+global encryptkey, encryptsalt
 
 encryptsalt = None
 # encryptsalt = b'G030QC0381658814'  # device id
@@ -56,6 +56,9 @@ def decrypt(key, iv, ciphertext, tag):
         modes.GCM(iv, tag),
         backend=default_backend()
     ).decryptor()
+    # We put associated_data back in or the tag will fail to verify
+    # when we finalize the decryptor.
+    decryptor.authenticate_additional_data("Amazon ConfigureMe")
     # Decryption gets us the authenticated plaintext.
     # If the tag does not match an InvalidTag exception will be raised.
     return decryptor.update(ciphertext) + decryptor.finalize()
