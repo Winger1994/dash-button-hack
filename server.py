@@ -24,7 +24,7 @@ global privkey, pubkey, privpem, pubpem
 global peerpubpem, peerpubkey
 global encryptkey, encryptsalt
 
-encryptsalt = None
+encryptsalt = b'Amazon ConfigureMe'
 # encryptsalt = b'G030QC0381658814'  # device id
 # encryptsalt = urllib.unquote('8%F7%3Dc3%F2')  # mac id
 # print('encryption salt (hex): %s' % encryptsalt.encode('hex'))
@@ -58,7 +58,7 @@ def decrypt(key, iv, ciphertext, tag):
     ).decryptor()
     # We put associated_data back in or the tag will fail to verify
     # when we finalize the decryptor.
-    decryptor.authenticate_additional_data("Amazon ConfigureMe")
+    # decryptor.authenticate_additional_data('Amazon ConfigureMe')
     # Decryption gets us the authenticated plaintext.
     # If the tag does not match an InvalidTag exception will be raised.
     return decryptor.update(ciphertext) + decryptor.finalize()
@@ -70,7 +70,7 @@ def test_encryt():
     # Generate a random 128-bit IV.
     iv = os.urandom(16)
     iv, ciphertext, tag = encrypt(
-        key, iv, b"a secret message! what a beautiful day")
+        key, iv, b'a secret message! what a beautiful day')
     print('IV: %s (len: %d)\ntag: %s (len: %d)\n'
           'cipher text: %s (len: %d)\n' %
           (iv.encode('hex'), len(iv),
